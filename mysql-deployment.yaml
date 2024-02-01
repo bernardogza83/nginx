@@ -2,19 +2,37 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mysql-deployment
+  labels:
+    app: wordpress
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mysql
+      tier: mysql
+      app: wordpress
   template:
     metadata:
       labels:
-        app: mysql
+        app: wordpress
+        tier: mysql
     spec:
       containers:
-      - name: mysql
-        image: mysql:latest
+      - args:
+          - --default-authentication-plugin=mysql_native_password
+        image: mysql:8.0.20
+        name: mysql
         env:
+        - name: MYSQL_DATABASE
+          value: wordpress
         - name: MYSQL_ROOT_PASSWORD
           value: test123
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim

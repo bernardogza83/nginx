@@ -2,23 +2,41 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: wordpress-deployment
+  labels:
+    app: wordpress
 spec:
   replicas: 3
   selector:
     matchLabels:
       app: wordpress
+      tire: frontend
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
         app: wordpress
+        tier: frontend
     spec:
       containers:
-      - name: wordpress
-        image: wordpress:latest
-        ports:
-        - containerPort: 80
+      - image: wordpress:5.7.1-apache
+        name: wordpress
         env:
         - name: WORDPRESS_DB_HOST
-          value: mysql-service
+          value: wordpress-mysql
+        - name: WORDPRESS_DB_NAME
+          value: wordpress
+        - name: WORDPRESS_DB_USER
+          value: root
         - name: WORDPRESS_DB_PASSWORD
           value: test123
+        ports:
+        - containerPort: 80
+          name: wordpress
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+        volumes:
+        - name: wordpress-persistent-storage
+          persistentVolumeClaim:
+            claimName: wp-pv-claim
